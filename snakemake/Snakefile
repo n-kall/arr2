@@ -1,0 +1,430 @@
+configfile: "config.yaml"
+
+def get_stan_files(wildcards):
+    return config["stanfile_path"] + wildcards.model + ".stan"
+
+def get_stan_gq_files(wildcards):
+    return config["stanfile_path"] + wildcards.model + "_gq.stan"
+
+def get_compiled_models(wildcards):
+    return config["compiled_path"] + wildcards.model
+
+def get_compiled_gq_models(wildcards):
+    return config["compiled_path"] + wildcards.model + "_gq"
+
+def get_dgp_script(wildcards):
+    return config["scripts_path"] + "dgp_" + wildcards.dgp + ".R"
+
+rule compile_all:
+    input: [expand(config["compiled_path"] + "{model}", model=config["arx_models"] + config["ar_models"] + config["ltx_models"])] + [expand(config["compiled_path"] + "{model}", model=config["arx_gq_models"] + config["ar_gq_models"] + config["ltx_gq_models"])]
+
+rule compile:
+    resources:
+        runtime=10,
+        cpus=1,
+        mem_per_cpu=1000
+    input:
+        get_stan_files,
+        config["scripts_path"] + config["scripts"]["compile"]
+    output:
+        config["compiled_path"] + "{model}",
+    script:
+        config["scripts_path"] + config["scripts"]["compile"]
+
+
+# ar
+rule ar_generate_data_all:
+    input: expand(config["ar_datasets_path"] + "{dgp}-n-{n_obs}__{rep}.RDS", dgp=config["ar_dgps"], rep=[i for i in range(1, config["n_datasets"] + 1)], n_obs=config["ar_n_obs"])
+
+rule ar_generate_data:
+    resources:
+        runtime=10,
+        cpus=1,
+        mem_per_cpu=1000
+    input:
+        config["scripts_path"] + config["scripts"]["generate_data"],
+        functions=config["scripts_path"] + config["scripts"]["functions"],
+        script=get_dgp_script
+    output:
+        dataset_file=config["ar_datasets_path"] + "{dgp}-n-{n_obs}__{rep}.RDS"
+    script:
+        config["scripts_path"] + config["scripts"]["generate_data"]
+
+rule ar_estim_all:
+    resources:
+        runtime=30,
+        cpus=1,
+        mem_per_cpu=3000
+    input:
+        results=expand(config["results_path"] + "ar_estim/" + "{model}__{npars}__{dgp}-n-{n_obs}__{rep}.csv", model=config["ar_models"], dgp=config["ar_dgps"], rep=[i for i in range(1, config["n_datasets"] + 1)], npars=config["ar_npars"], n_obs=config["ar_n_obs"]),
+        functions=config["scripts_path"] + config["scripts"]["functions"]
+    output:
+        config["summary_path"] + "ar_estim_results.csv"
+    script:
+        config["scripts_path"] + config["scripts"]["ar_estim_join_results"]
+
+rule ar_estim:
+    resources:
+        runtime=240,
+        cpus=4,
+        mem_per_cpu=1000
+    input:
+        dataset=config["ar_datasets_path"] + "{dgp}-n-{n_obs}__{rep}.RDS",
+        prior_specs=config["scripts_path"] + config["scripts"]["prior_specs"],
+        functions=config["scripts_path"] + config["scripts"]["functions"],
+        exe_file=get_compiled_models
+    output:
+        fit_summary=config["results_path"] + "ar_estim/" + "{model}__{npars}__{dgp}-n-{n_obs}__{rep}.csv"
+    script:
+        config["scripts_path"] + config["scripts"]["ar_estim"]
+
+
+rule ar_estim_plots:
+    resources:
+        runtime=10,
+        cpus=1,
+        mem_per_cpu=1000
+    input:
+        results=config["summary_path"] + "ar_estim_result.csv"
+    output:
+        config["summary_path"] + "ar_estim_unpadded_120.tex",
+        config["summary_path"] + "ar_estim_padded_120.tex",
+        config["summary_path"] + "ar_estim_unpadded_120.pdf",
+        config["summary_path"] + "ar_estim_padded_120.pdf"
+    script:
+        config["scripts_path"] + config["scripts"]["ar_estim_plots"]
+
+
+# ar lfo
+rule ar_lfo_all:
+    input:
+        results_files=expand(config["results_path"] + "ar_lfo/" + "{model}__{npars}__{dgp}-n-{n_obs}__{rep}.csv", model=config["ar_models"], dgp=config["ar_dgps"], rep=[i for i in range(1, config["n_datasets"] + 1)], npars=config["ar_npars"], n_obs=config["ar_n_obs"]),
+        functions=config["scripts_path"] + config["scripts"]["functions"]
+    output:
+        summary_file=config["summary_path"] + "ar_lfo.csv"
+    script:
+        config["scripts_path"] + config["scripts"]["ar_lfo_summary"]
+        
+rule ar_lfo_fit_folds:
+    resources:
+        runtime=240,
+        cpus=4,
+        mem_per_cpu=1000
+    input:
+        dataset=config["ar_datasets_path"] + "{dgp}-n-{n_obs}__{rep}.RDS",
+        prior_specs=config["scripts_path"] + config["scripts"]["prior_specs"],
+        functions=config["scripts_path"] + config["scripts"]["functions"],
+        exe_file=get_compiled_models,
+        gq_file=get_compiled_gq_models
+    output:
+        fit_summary=config["results_path"] + "ar_lfo/" + "{model}__{npars}__{dgp}-n-{n_obs}__{rep}.csv"
+    script:
+        config["scripts_path"] + config["scripts"]["ar_lfo"]
+
+rule ar_lfo_plots:
+    resources:
+        runtime=10,
+        cpus=1,
+        mem_per_cpu=1000
+    input:
+        results=expand(config["results_path"] + "ar_lfo/" + "{model}__{npars}__{dgp}-n-{n_obs}__{rep}.csv", model=config["ar_models"], npars=config["ar_npars"], dgp=config["ar_dgps"], rep=[i for i in range(1, config["n_datasets"] + 1)], rho=config["arx_rho"], m=config["arx_m"], n_obs=config["arx_n_obs"])
+    output:
+        config["summary_path"] + "ar_elpd_24.tex",
+        config["summary_path"] + "ar_elpd_120.tex",
+        config["summary_path"] + "ar_elpd_24.pdf",
+        config["summary_path"] + "ar_elpd_120.pdf"
+
+    script:
+        config["scripts_path"] + config["scripts"]["ar_lfo_plots"]
+
+# arx
+
+rule arx_generate_data_all:
+    input: expand(config["arx_datasets_path"] + "{dgp}-n-{n_obs}-rho-{rho}__{rep}.RDS", dgp=config["arx_dgps"], rep=[i for i in range(1, config["n_datasets"] + 1)], rho=config["arx_rho"], m=config["arx_m"], n_obs=config["arx_n_obs"])
+
+rule arx_generate_data:
+    resources:
+        runtime=10,
+        cpus=1,
+        mem_per_cpu=1000
+    input:
+        config["scripts_path"] + config["scripts"]["generate_data"],
+        functions=config["scripts_path"] + config["scripts"]["functions"],
+        script=get_dgp_script
+    output:
+        dataset_file=config["arx_datasets_path"] + "{dgp}-n-{n_obs}-rho-{rho}__{rep}.RDS"
+    script:
+        config["scripts_path"] + config["scripts"]["generate_data"]
+
+
+# arx estimation
+
+rule arx_estim_all:
+    resources:
+        runtime=30,
+        cpus=1,
+        mem_per_cpu=3000
+    input:
+        results=expand(config["results_path"] + "arx_estim/" + "{model}__{dgp}-n-{n_obs}-rho-{rho}-m-{m}__{rep}.csv", model=config["arx_models"], dgp=config["arx_dgps"], rep=[i for i in range(1, config["n_datasets"] + 1)], rho=config["arx_rho"], m=config["arx_m"], n_obs=config["arx_n_obs"]),
+        functions=config["scripts_path"] + config["scripts"]["functions"]
+    output: config["summary_path"] + "arx_estim_results.csv"
+    script: config["scripts_path"] + config["scripts"]["arx_estim_join_results"]
+
+rule arx_estim:
+    resources:
+        runtime=240,
+        cpus=4,
+        mem_per_cpu=1000
+    input:
+        dataset=config["arx_datasets_path"] + "{dgp}-n-{n_obs}-rho-{rho}__{rep}.RDS",
+        prior_specs=config["scripts_path"] + config["scripts"]["prior_specs"],
+        functions=config["scripts_path"] + config["scripts"]["functions"],
+        exe_file=get_compiled_models
+    output:
+        fit_summary=config["results_path"] + "arx_estim/" + "{model}__{dgp}-n-{n_obs}-rho-{rho}-m-{m}__{rep}.csv"
+    script:
+        config["scripts_path"] + config["scripts"]["arx_estim"]
+
+
+rule arx_estim_plots:
+    resources:
+        runtime=10,
+        cpus=1,
+        mem_per_cpu=1000
+    input:
+        results=config["summary_path"] + "arx_estim_results.csv"
+    output:
+        config["summary_path"] + "arx_estim_rmse_120.tex",
+        config["summary_path"] + "arx_estim_energy_120.tex",
+        config["summary_path"] + "arx_estim_rmse_120.pdf",
+        config["summary_path"] + "arx_estim_energy_120.pdf"
+    script:
+        config["scripts_path"] + config["scripts"]["arx_estim_plots"]
+
+# arx lfo
+
+rule arx_lfo_all:
+    input: expand(config["results_path"] + "arx_lfo/" "{model}__{dgp}-n-{n_obs}-rho-{rho}-m-{m}__{rep}.csv", model=config["arx_models"], dgp=config["arx_dgps"], rep=[i for i in range(1, config["n_datasets"] + 1)], rho=config["arx_rho"], m=config["arx_m"], n_obs=config["arx_n_obs"])
+
+rule arx_lfo:
+    resources:
+        runtime=1000,
+        cpus=4,
+        mem_per_cpu=1000
+    input:
+        dataset=config["arx_datasets_path"] + "{dgp}-n-{n_obs}-rho-{rho}__{rep}.RDS",
+        prior_specs=config["scripts_path"] + config["scripts"]["prior_specs"],
+        functions=config["scripts_path"] + config["scripts"]["functions"],
+        exe_file=get_compiled_models
+    output:
+        fit_summary=config["results_path"] + "arx_lfo/" + "{model}__{dgp}-n-{n_obs}-rho-{rho}-m-{m}__{rep}.csv"
+    script:
+        config["scripts_path"] + config["scripts"]["arx_lfo"]
+
+
+rule arx_lfo_plots:
+    resources:
+        runtime=10,
+        cpus=1,
+        mem_per_cpu=1000
+    input:
+        results=expand(config["results_path"] + "arx_lfo/" "{model}__{dgp}-n-{n_obs}-rho-{rho}-m-{m}__{rep}.csv", model=config["arx_models"], dgp=config["arx_dgps"], rep=[i for i in range(1, config["n_datasets"] + 1)], rho=config["arx_rho"], m=config["arx_m"], n_obs=config["arx_n_obs"])
+    output:
+        config["summary_path"] + "arx_elpd_120.tex",
+        config["summary_path"] + "arx_elpd_120.pdf"
+    script:
+        config["scripts_path"] + config["scripts"]["arx_lfo_plots"]
+
+
+# ltx
+
+rule ltx_generate_data_all:
+    input: expand(config["ltx_datasets_path"] + "{dgp}-n-{n_obs}-rho-{rho}-m-{m}-snr-{state_snr}__{rep}.RDS", dgp=config["ltx_dgps"], rep=[i for i in range(1, config["n_datasets"] + 1)], rho=config["ltx_rho"], m=config["ltx_m"], n_obs=config["ltx_n_obs"],  state_snr=config["ltx_state_snr"])
+
+rule ltx_generate_data:
+    resources:
+        runtime=10,
+        cpus=1,
+        mem_per_cpu=1000
+    input:
+        config["scripts_path"] + config["scripts"]["generate_data"],
+        functions=config["scripts_path"] + config["scripts"]["functions"],
+        script=get_dgp_script
+    output:
+        dataset_file=config["ltx_datasets_path"] + "{dgp}-n-{n_obs}-rho-{rho}-m-{m}-snr-{state_snr}__{rep}.RDS"
+    script:
+        config["scripts_path"] + config["scripts"]["generate_data"]
+
+
+# ltx estimation
+
+rule ltx_estim_all:
+    resources:
+        runtime=30,
+        cpus=1,
+        mem_per_cpu=3000
+    input:
+        results=expand(config["results_path"] + "ltx_estim/" + "{model}__{dgp}-n-{n_obs}-rho-{rho}-m-{m}-snr-{state_snr}__{rep}.csv", model=config["ltx_models"], dgp=config["ltx_dgps"], rep=[i for i in range(1, config["n_datasets"] + 1)], rho=config["ltx_rho"], m=config["ltx_m"], n_obs=config["ltx_n_obs"], state_snr=config["ltx_state_snr"]),
+        functions=config["scripts_path"] + config["scripts"]["functions"]
+    output: config["summary_path"] + "ltx_estim_results.csv"
+    script: config["scripts_path"] + config["scripts"]["ltx_estim_join_results"]
+
+rule ltx_estim:
+    resources:
+        runtime=240,
+        cpus=4,
+        mem_per_cpu=2000
+    input:
+        dataset=config["ltx_datasets_path"] + "{dgp}-n-{n_obs}-rho-{rho}-m-{m}-snr-{state_snr}__{rep}.RDS",
+        prior_specs=config["scripts_path"] + config["scripts"]["prior_specs"],
+        functions=config["scripts_path"] + config["scripts"]["functions"],
+        exe_file=get_compiled_models
+    output:
+        fit_object=config["results_path"] + "ltx_estim/" + "{model}__{dgp}-n-{n_obs}-rho-{rho}-m-{m}-snr-{state_snr}__{rep}.RDS"
+    script:
+        config["scripts_path"] + config["scripts"]["ltx_estim"]
+
+rule ltx_estim_metrics:
+    resources:
+        runtime=160,
+        cpus=1,
+        mem_per_cpu=2000
+    input:
+        dataset=config["ltx_datasets_path"] + "{dgp}-n-{n_obs}-rho-{rho}-m-{m}-snr-{state_snr}__{rep}.RDS",
+        prior_specs=config["scripts_path"] + config["scripts"]["prior_specs"],
+        functions=config["scripts_path"] + config["scripts"]["functions"],
+        fit_object=config["results_path"] + "ltx_estim/" + "{model}__{dgp}-n-{n_obs}-rho-{rho}-m-{m}-snr-{state_snr}__{rep}.RDS"
+    output:
+        fit_summary=config["results_path"] + "ltx_estim/" + "{model}__{dgp}-n-{n_obs}-rho-{rho}-m-{m}-snr-{state_snr}__{rep}.csv"
+    script:
+        config["scripts_path"] + config["scripts"]["ltx_estim_metrics"]
+
+rule ltx_estim_plots:
+    resources:
+        runtime=10,
+        cpus=1,
+        mem_per_cpu=1000
+    input:
+        results=config["summary_path"] + "ltx_estim_results.csv"
+    output:
+        config["summary_path"] + "ltx_estim_rmse_120.tex",
+        config["summary_path"] + "ltx_estim_energy_120.tex",
+        config["summary_path"] + "ltx_estim_rmse_120.pdf",
+        config["summary_path"] + "ltx_estim_energy_120.pdf"
+    script:
+        config["scripts_path"] + config["scripts"]["ltx_estim_plots"]
+
+# ltx lfo
+
+rule ltx_lfo_all:
+    input: expand(config["results_path"] + "ltx_lfo/" "{model}__{dgp}-n-{n_obs}-rho-{rho}-m-{m}-snr-{state_snr}__{rep}.csv", model=config["ltx_models"], dgp=config["ltx_dgps"], rep=[i for i in range(1, config["n_datasets"] + 1)], rho=config["ltx_rho"], m=config["ltx_m"], n_obs=config["ltx_n_obs"], state_snr=config["ltx_state_snr"]),
+
+rule ltx_lfo:
+    resources:
+        runtime=7000,
+        cpus=4,
+        mem_mb=8000,
+        mem_per_cpu=8000
+    input:
+        dataset=config["ltx_datasets_path"] + "{dgp}-n-{n_obs}-rho-{rho}-m-{m}-snr-{state_snr}__{rep}.RDS",
+        prior_specs=config["scripts_path"] + config["scripts"]["prior_specs"],
+        functions=config["scripts_path"] + config["scripts"]["functions"],
+        exe_file=get_compiled_models
+    output:
+        fit_summary=config["results_path"] + "ltx_lfo/" + "{model}__{dgp}-n-{n_obs}-rho-{rho}-m-{m}-snr-{state_snr}__{rep}.csv"
+    script:
+        config["scripts_path"] + config["scripts"]["ltx_lfo"]
+
+
+rule ltx_lfo_plots:
+    resources:
+        runtime=10,
+        cpus=1,
+        mem_per_cpu=1000
+    input:
+        results=expand(config["results_path"] + "ltx_lfo/" "{model}__{dgp}-n-{n_obs}-rho-{rho}-m-{m}-snr-{state_snr}__{rep}.csv", model=config["ltx_models"], dgp=config["ltx_dgps"], rep=[i for i in range(1, config["n_datasets"] + 1)], rho=config["ltx_rho"], m=config["ltx_m"], n_obs=config["ltx_n_obs"], state_snr= config["ltx_state_snr"])
+    output:
+        config["summary_path"] + "ltx_elpd_120.tex",
+        config["summary_path"] + "ltx_elpd_120.pdf"
+    script:
+        config["scripts_path"] + config["scripts"]["ltx_lfo_plots"]
+
+
+
+# empirical application
+
+rule inflation_gen_data_all:
+    input:
+        expand("data/inflation/inflation_dat_{subset}.rds", subset=["all", "subset"])
+
+rule inflation_gen_data:
+    input:
+        script="scripts/inflation_gen_data.R"
+    output:
+        "data/inflation/inflation_dat_{subset}.rds"
+    script:
+        "scripts/inflation_gen_data.R"
+        
+
+rule inflation_all:
+    input:
+        functions=config["scripts_path"] + "functions.R",
+        results=expand(config["results_path"] + "inflation/" + "{model}__inflation_{subset}__{fold}.csv", model=config["inflation_models"], subset=["all", "subset"], fold=[i for i in range(1, 503-240+1)]),
+    output: config["summary_path"] + "inflation_results.csv"
+    script:
+        "scripts/inflation_join_results.R"
+
+
+rule inflation_compile_all:
+    input: expand(config["compiled_path"] + "{inflation_model}", inflation_model=config["inflation_models"])
+
+rule inflation_fit_fold:
+    resources:
+        runtime=1000,
+        cpus=4,
+        mem_per_cpu=2000
+    input:
+        dataset="data/inflation/inflation_dat_{subset}.rds",
+        exe_file=get_compiled_models,
+        functions=config["scripts_path"] + "empirical_functions.R"
+    output:
+        fit_object=config["results_path"] + "inflation/" + "{model}__inflation_{subset}__{fold}.RDS"
+    script:
+        config["scripts_path"] + "inflation.R"
+
+rule inflation_summarise_fold:
+    input:
+        fit_object=config["results_path"] + "inflation/" + "{model}__inflation_{subset}__{fold}.RDS",
+        dataset="data/inflation/inflation_dat_{subset}.rds",
+        functions=config["scripts_path"] + "empirical_functions.R"
+    output:
+        fit_summary=config["results_path"] + "inflation/" + "{model}__inflation_{subset}__{fold}.csv"
+    script:
+        config["scripts_path"] + "inflation_summary.R"
+
+
+rule inflation_pp_compile:
+    input: expand(config["compiled_path"] + "{inflation_pp_model}", inflation_pp_model=config["inflation_pp_models"])
+
+
+rule inflation_pp_all:
+    input:
+        functions=config["scripts_path"] + "functions.R",
+        results=expand(config["results_path"] + "inflation_pp/" + "{model}__inflation_{subset}__pp_{priorpost}.csv", model=config["inflation_pp_models"], subset=["all", "subset"], priorpost=["prior", "posterior"]),
+    output: config["summary_path"] + "inflation_pp_results.csv"
+    script:
+        "scripts/inflation_pp_join_results.R"
+
+rule inflation_pp:    
+    resources:
+        runtime=1000,
+        cpus=4,
+        mem_per_cpu=2000
+    input:
+        dataset="data/inflation/inflation_dat_{subset}.rds",
+        exe_file=get_compiled_models,
+        functions=config["scripts_path"] + "empirical_functions.R"
+    output:
+        fit_object=config["results_path"] + "inflation_pp/" + "{model}__inflation_{subset}__pp_{priorpost}.csv"
+    script:
+        config["scripts_path"] + "inflation_fullsample.R"

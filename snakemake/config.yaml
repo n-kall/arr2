@@ -1,0 +1,73 @@
+stanfile_path: "stan/"
+compiled_path: "stan/exe/"
+datasets_path: "data/"
+ar_datasets_path: "data/ar/"
+arx_datasets_path: "data/arx/"
+ltx_datasets_path: "data/ltx/"
+scripts_path: "scripts/"
+results_path: "results/"
+summary_path: "summary/"
+
+scripts:
+  compile: "compile_model.R"
+  functions: "functions.R"
+  prior_specs: "prior_specs.R"
+  generate_data: "generate_data.R"
+  ar_estim: "ar_estim.R"
+  ar_estim_join_results: "ar_estim_join_results.R"
+  ar_estim_plots: "ar_estim_plots.R"
+  ar_lfo: "ar_lfo.R"
+  ar_lfo_metrics: "ar_lfo_metrics.R"
+  ar_lfo_summary: "ar_lfo_summary.R"
+  ar_lfo_join_results: "ar_lfo_join_results.R"
+  ar_lfo_plots: "ar_lfo_plots.R"
+  arx_estim: "arx_estim.R"
+  arx_estim_join_results: "arx_estim_join_results.R"
+  arx_estim_plots: "arx_estim_plots.R"
+  arx_lfo: "arx_lfo.R"
+  arx_lfo_join_results: "arx_lfo_join_results.R"
+  arx_lfo_plots: "arx_lfo_plots.R"
+  ltx_estim: "ltx_estim.R"
+  ltx_estim_metrics: "ltx_estim_metrics.R"
+  ltx_estim_join_results: "ltx_estim_join_results.R"
+  ltx_estim_plots: "ltx_estim_plots.R"
+  ltx_lfo: "ltx_lfo.R"
+  ltx_lfo_join_results: "ltx_lfo_join_results.R"
+  ltx_lfo_plots: "ltx_lfo_plots.R"
+
+n_datasets: 25
+
+seed: 1994
+
+# AR estim and lfo
+ar_models: ["gaussian", "arr2_gamma_ncp_minnesota", "arr2_gamma_ncp_flat", "minnesota", "rhs"]
+ar_gq_models: ["gaussian_gq", "arr2_gamma_ncp_minnesota_gq", "arr2_gamma_ncp_flat_gq", "minnesota_gq", "rhs_gq"]
+ar_dgps: ["ar8_minnesota", "ar8_damposc", "ar8_delayed"]
+ar_n_obs: [120]
+ar_npars: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+
+# ARX estim and lfo
+arx_models: ["arr2_arx_gamma_minnesota", "arr2_arx_gamma_flat", "minnesota_arx", "rhs_arx"]
+arx_gq_models: ["arr2_arx_gamma_minnesota_gq", "arr2_arx_gamma_flat_gq", "minnesota_arx_gq", "rhs_arx_gq"]
+arx_dgps: ["cement"]
+arx_n_obs: [120]
+arx_m: [20, 100, 200, 400]
+arx_rho: [0, 0.5, 0.9]
+
+
+# LTX estim and lfo
+ltx_models: ["arr2_ltx_gamma_flat", "arr2_ltx_gamma_minnesota", "minnesota_ltx", "rhs_ltx", "arr2_ltx_dc"]
+ltx_gq_models: ["arr2_ltx_gamma_flat_gq", "arr2_ltx_gamma_minnesota_gq", "minnesota_ltx_gq", "rhs_ltx_gq", "arr2_ltx_dc_gq"]
+ltx_dgps: ["cement_ltx"]
+ltx_n_obs: [120, 240, 480]
+ltx_m: [20]
+ltx_rho: [0.5]
+ltx_state_snr: [0.01, 0.1, 0.5, 1]
+
+
+
+# inflation
+inflation_models: ["arr2_ncp_ltx_dc_flat_4cast", "arr2_ncp_ltx_dc_sparse_4cast", "arr2_ncp_ltx_dc_minnesota_4cast", "minnesota_ncp_ltx_4cast", "rhs_ncp_ltx_4cast"]
+
+inflation_pp_models: ["pp_arr2_ncp_ltx_dc_minnesota_4cast", "pp_minnesota_ncp_ltx_4cast", "pp_rhs_ncp_ltx_4cast"]
