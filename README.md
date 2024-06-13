@@ -2,6 +2,14 @@
 
 Supporting code for the paper "The ARR2 prior: flexible predictive prior definition for Bayesian auto-regressions" by David Kohns, Noa Kallioinen, Yann McLatchie and Aki Vehtari. [Preprint available on arXiv](https://arxiv.org/abs/2405.19920).
 
+
+## Example models
+
+See the `examples` folder for Stan and R code examples.
+
+
+## Experiments
+
 Experiments are written in R and Stan and uses snakemake to run.
 
 To run the experiments, enter the snakemake directory and run a rule such as:
