@@ -601,7 +601,8 @@ R^2 = \frac{\sigma^2_y\sum_{i=1}^K \frac{\sigma^2_{\beta,i}}{1-\phi^2_i}}{\sigma
 <p><img src="dyn_reg_casestudy5_files/figure-html/gen-posterior-r2-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-<p>Clearly, the Minnesota prior regularises the variation in the coefficient processes less than the ARR2 prior, yielding larger marginal <span class="math inline">\(R^2\)</span> estimates. Since the <span class="math inline">\(\beta\)</span> processes are functions of time, an estimate of time-variation in <span class="math inline">\(R^2\)</span> may be approximated by <span class="math inline">\(R^2_t = \frac{\beta_t^Tx_t^Tx_t^T\beta_t}{\beta_t^Tx_t^Tx_t^T\beta_t + \sigma^2_y}\)</span> This is how the mean of this quantity varies for the two models over time:</p>
+<p>Clearly, the Minnesota prior regularises the variation in the coefficient processes less than the ARR2 prior, yielding larger marginal <span class="math inline">\(R^2\)</span> estimates. It is well known that inflation series are hard to predict <span class="citation" data-cites="stock_why_2006">Stock and Watson (<a href="#ref-stock_why_2006" role="doc-biblioref">2006</a>)</span> , and we would also expect to find a low <span class="math inline">\(R^2\)</span> estimates.</p>
+<p>Since the <span class="math inline">\(\beta\)</span> processes are functions of time, an estimate of time-variation in <span class="math inline">\(R^2\)</span> may be approximated by <span class="math inline">\(R^2_t = \frac{\beta_t^Tx_t^Tx_t^T\beta_t}{\beta_t^Tx_t^Tx_t^T\beta_t + \sigma^2_y}\)</span>. This is how the mean of this quantity varies for the two models over time:</p>
 <div class="cell" data-hash="dyn_reg_casestudy5_cache/html/r2-overtime_9004c49e26a243eae3042b96b08b785f">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>timevec <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(emp_app<span class="sc">$</span>datevec[<span class="dv">1</span><span class="sc">:</span><span class="dv">307</span>])</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>betas1 <span class="ot">&lt;-</span> <span class="fu">extract_r2</span>(fit_arr2, <span class="st">"ARR2"</span>, timevec)</span>
@@ -634,7 +635,7 @@ R^2 = \frac{\sigma^2_y\sum_{i=1}^K \frac{\sigma^2_{\beta,i}}{1-\phi^2_i}}{\sigma
 <p><img src="dyn_reg_casestudy5_files/figure-html/r2-overtime-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-<p>The Minnesota model tends to favor more variation and larger magnitudes in <span class="math inline">\(R^2\)</span>. Let’s look at the posterior mean estimates of <span class="math inline">\(\beta_t\)</span> over time:</p>
+<p>The Minnesota and RHS models tend to favor more variation and larger magnitudes in <span class="math inline">\(R^2\)</span>. Let’s look at the posterior mean estimates of <span class="math inline">\(\beta_t\)</span> over time:</p>
 <div class="cell" data-hash="dyn_reg_casestudy5_cache/html/tvp-paths-posterior_477d2ff9026427483365993c90e72b4b">
 <div class="cell-output-display">
 <p><img src="dyn_reg_casestudy5_files/figure-html/tvp-paths-posterior-1.png" class="img-fluid" width="672"></p>
@@ -665,6 +666,7 @@ R^2 = \frac{\sigma^2_y\sum_{i=1}^K \frac{\sigma^2_{\beta,i}}{1-\phi^2_i}}{\sigma
 3 rhs       -13.4    0.65</code></pre>
 </div>
 </div>
+<p>The ARR2 model also results in far better predictions.</p>
 </section>
 </section>
 <section id="conclusion-and-discussion" class="level2">
@@ -704,6 +706,9 @@ Kohns, David, Noa Kallioinen, Yann McLatchie, and Aki Vehtari. 2025. <span>“Th
 </div>
 <div id="ref-piironen_hyperprior_2017" class="csl-entry" role="doc-biblioentry">
 Piironen, Juho, and Aki Vehtari. 2017. <span>“On the <span>Hyperprior Choice</span> for the <span>Global Shrinkage Parameter</span> in the <span>Horseshoe Prior</span>.”</span> In <em>Proceedings of the 20th <span>International Conference</span> on <span>Artificial Intelligence</span> and <span>Statistics</span></em>, 905–13. PMLR.
+</div>
+<div id="ref-stock_why_2006" class="csl-entry" role="doc-biblioentry">
+Stock, James, and Mark Watson. 2006. <span>“Why <span>Has</span> <span>U</span>.<span>S</span>. <span>Inflation</span> <span>Become</span> <span>Harder</span> to <span>Forecast</span>?”</span> w12324. Cambridge, MA: National Bureau of Economic Research. <a href="https://doi.org/10.3386/w12324">https://doi.org/10.3386/w12324</a>.
 </div>
 <div id="ref-zhang_bayesian_2022" class="csl-entry" role="doc-biblioentry">
 Zhang, Yan Dora, Brian P. Naughton, Howard D. Bondell, and Brian J. Reich. 2022. <span>“Bayesian <span>Regression</span> <span>Using</span> a <span>Prior</span> on the <span>Model</span> <span>Fit</span>: <span>The</span> <span>R2</span>-<span>D2</span> <span>Shrinkage</span> <span>Prior</span>.”</span> <em>Journal of the American Statistical Association</em> 117 (538): 862–74. <a href="https://doi.org/10.1080/01621459.2020.1825449">https://doi.org/10.1080/01621459.2020.1825449</a>.

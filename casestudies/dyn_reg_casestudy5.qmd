@@ -675,7 +675,9 @@ print(p)
 
 ```
 
-Clearly, the Minnesota prior regularises the variation in the coefficient processes less than the ARR2 prior, yielding larger marginal $R^2$ estimates. Since the $\beta$ processes are functions of time, an estimate of time-variation in $R^2$ may be approximated by $R^2_t = \frac{\beta_t^Tx_t^Tx_t^T\beta_t}{\beta_t^Tx_t^Tx_t^T\beta_t + \sigma^2_y}$ This is how the mean of this quantity varies for the two models over time:
+Clearly, the Minnesota prior regularises the variation in the coefficient processes less than the ARR2 prior, yielding larger marginal $R^2$ estimates. It is well known that inflation series are hard to predict @stock_why_2006 , and we would also expect to find a low $R^2$ estimates.
+
+Since the $\beta$ processes are functions of time, an estimate of time-variation in $R^2$ may be approximated by $R^2_t = \frac{\beta_t^Tx_t^Tx_t^T\beta_t}{\beta_t^Tx_t^Tx_t^T\beta_t + \sigma^2_y}$. This is how the mean of this quantity varies for the two models over time:
 
 ```{r, r2-overtime}
 timevec <- as.Date(emp_app$datevec[1:307])
@@ -707,7 +709,7 @@ tsplot <- ggplot(betas, aes(Time, R2_t)) +
 print(tsplot)
 ```
 
-The Minnesota model tends to favor more variation and larger magnitudes in $R^2$. Let's look at the posterior mean estimates of $\beta_t$ over time:
+The Minnesota and RHS models tend to favor more variation and larger magnitudes in $R^2$. Let's look at the posterior mean estimates of $\beta_t$ over time:
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE, tvp-paths-posterior}
 # Extract the beta vectors
@@ -749,6 +751,8 @@ print(comparison_table)
 
 
 ```
+
+The ARR2 model also results in far better predictions.
 
 ## Conclusion and Discussion
 
