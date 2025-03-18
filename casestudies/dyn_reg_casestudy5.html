@@ -560,7 +560,7 @@ R^2 = \frac{\sigma^2_y\sum_{i=1}^K \frac{\sigma^2_{\beta,i}}{1-\phi^2_i}}{\sigma
 
 </div>
 <p>Now, let’s look at the posterior of the overall R2:</p>
-<div class="cell" data-hash="dyn_reg_casestudy5_cache/html/gen-posterior-r2_b4357061e83f04f7d73390934a0fc665">
+<div class="cell" data-hash="dyn_reg_casestudy5_cache/html/gen-posterior-r2_01fa4a824603fd7a26a4be1865f70f9e">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="do">## R2 Graphs</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract Marg_r2 values</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>r2_arr2 <span class="ot">&lt;-</span> fit_arr2<span class="sc">$</span><span class="fu">draws</span>(<span class="at">variables =</span> <span class="fu">c</span>(<span class="st">"R2_samp"</span>), <span class="at">format =</span> <span class="st">"matrix"</span>)</span>
@@ -583,7 +583,7 @@ R^2 = \frac{\sigma^2_y\sum_{i=1}^K \frac{\sigma^2_{\beta,i}}{1-\phi^2_i}}{\sigma
 <span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the plot</span></span>
 <span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(combined_df, <span class="fu">aes</span>(<span class="at">x =</span> marg_r2, <span class="at">color =</span> model)) <span class="sc">+</span></span>
 <span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>() <span class="sc">+</span></span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Prior R2 Distributions"</span>, <span class="at">y =</span> <span class="st">"Density"</span>, <span class="at">x =</span> <span class="st">"Marginal R2"</span>) <span class="sc">+</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Posterior R2 Distributions"</span>, <span class="at">y =</span> <span class="st">"Density"</span>, <span class="at">x =</span> <span class="st">"Marginal R2"</span>) <span class="sc">+</span></span>
 <span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlim</span>(<span class="dv">0</span>, <span class="dv">1</span>) <span class="sc">+</span></span>
 <span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
 <span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> model, <span class="at">scales =</span> <span class="st">"free_y"</span>, <span class="at">ncol =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
